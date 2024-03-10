@@ -17,7 +17,7 @@ func NewCompanyServiceClient(conn *grpc.ClientConn, secret string) *CompanyContr
 		Secret: secret,
 	}
 }
-func (c *CompanyControllers) InitialiseCompanyControllers(r *chi.Mux) {
-	r.Post("/company/signup", c.companySignup)
-	r.Post("/company/login", c.companyLogin)
+func (company *CompanyControllers) InitialiseCompanyControllers(r *chi.Mux) {
+	r.Post("/company/signup", company.companySignup)
+	r.Post("/company/login", company.companyLogin)
 }
