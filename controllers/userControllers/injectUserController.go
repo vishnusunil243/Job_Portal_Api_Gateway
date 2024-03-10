@@ -20,4 +20,6 @@ func NewUserServiceClient(conn *grpc.ClientConn, secret string) *UserController 
 func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Post("/user/signup", user.userSignup)
 	r.Post("/user/login", user.userLogin)
+
+	r.Post("/admin/login", user.adminLogin)
 }
