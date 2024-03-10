@@ -17,5 +17,5 @@ func NewEmailServiceClient(conn *grpc.ClientConn, Secret string) *EmailControlle
 		Secret: Secret,
 	}
 }
-func (email *EmailController) InjectEmailControllers(r *chi.Mux) {
+func (email *EmailController) InitialiseEmailControllers(r *chi.Mux) {
 }

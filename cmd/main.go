@@ -4,11 +4,12 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	InjectDependency "github.com/vishnusunil243/Job_Portal_Api_Gateway/DependencyInject"
+
+	"github.com/vishnusunil243/Job_Portal_Api_Gateway/Initializer"
 )
 
 func main() {
 	r := chi.NewRouter()
-	InjectDependency.Connect(r)
+	Initializer.Connect(r)
 	http.ListenAndServe(":8080", r)
 }

@@ -17,6 +17,7 @@ func NewUserServiceClient(conn *grpc.ClientConn, secret string) *UserController 
 		Secret: secret,
 	}
 }
-func (user *UserController) InjectUserControllers(r *chi.Mux) {
-	r.Post("/signup", user.userSignup)
+func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
+	r.Post("/user/signup", user.userSignup)
+	r.Post("/user/login", user.userLogin)
 }

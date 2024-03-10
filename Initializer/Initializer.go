@@ -1,4 +1,4 @@
-package InjectDependency
+package Initializer
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
+	companycontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/companyControllers"
 	emailcontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/emailControllers"
 	usercontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/userControllers"
 	"github.com/vishnusunil243/Job_Portal_Api_Gateway/helper"
@@ -24,10 +25,18 @@ func Connect(r *chi.Mux) {
 	if err != nil {
 		fmt.Println("cannot connect to email server ", err)
 	}
+	companyConn, err := helper.DialGrpc(":8082")
+	if err != nil {
+		fmt.Println("cannot connect to company-service")
+	}
 	userController := usercontrollers.NewUserServiceClient(userConn, secret)
 	emailController := emailcontrollers.NewEmailServiceClient(emailConn, secret)
-	usercontrollers.EmailConn = *emailController
-	userController.InjectUserControllers(r)
-	emailController.InjectEmailControllers(r)
+	companyController := companycontrollers.NewCompanyServiceClient(companyConn, secret)
 
+	usercontrollers.EmailConn = *emailController
+	companycontrollers.EmailConn = *emailController
+
+	userController.InitialiseUserControllers(r)
+	emailController.InitialiseEmailControllers(r)
+	companyController.InitialiseCompanyControllers(r)
 }
