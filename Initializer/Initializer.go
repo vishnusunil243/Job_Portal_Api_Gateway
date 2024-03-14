@@ -33,9 +33,6 @@ func Connect(r *chi.Mux) {
 	emailController := emailcontrollers.NewEmailServiceClient(emailConn, secret)
 	companyController := companycontrollers.NewCompanyServiceClient(companyConn, secret)
 
-	usercontrollers.EmailConn = *emailController
-	companycontrollers.EmailConn = *emailController
-
 	userController.InitialiseUserControllers(r)
 	emailController.InitialiseEmailControllers(r)
 	companyController.InitialiseCompanyControllers(r)

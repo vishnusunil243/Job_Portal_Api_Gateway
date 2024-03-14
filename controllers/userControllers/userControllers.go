@@ -11,12 +11,9 @@ import (
 
 	"github.com/vishnusunil243/Job-Portal-proto-files/pb"
 	"github.com/vishnusunil243/Job_Portal_Api_Gateway/JWT"
-	emailcontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/emailControllers"
-	"github.com/vishnusunil243/Job_Portal_Api_Gateway/helper"
-)
 
-var (
-	EmailConn emailcontrollers.EmailController
+	"github.com/vishnusunil243/Job_Portal_Api_Gateway/helper"
+	helperstruct "github.com/vishnusunil243/Job_Portal_Api_Gateway/helperStruct"
 )
 
 func (user *UserController) userSignup(w http.ResponseWriter, r *http.Request) {
@@ -33,9 +30,28 @@ func (user *UserController) userSignup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "please enter a valid email", http.StatusBadRequest)
 		return
 	}
+	if !helper.CheckString(req.Name) {
+		http.Error(w, "please enter a valid name without a number", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidEmail(req.Email) {
+		http.Error(w, "please enter a valid email", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckStringNumber(req.Phone) {
+		http.Error(w, "please enter a valid phone number", http.StatusBadRequest)
+		return
+	}
+	if !helper.IsStrongPassword(req.Password) {
+		http.Error(w, "please enter a strong password which contains lowercase,uppercase,number and atleast 1 special character", http.StatusBadRequest)
+		return
+	}
 
 	if req.Otp == "" {
-		err := EmailConn.SendOTP(req.Email)
+
+		_, err := user.EmailConn.SendOTP(context.Background(), &pb.SendOtpRequest{
+			Email: req.Email,
+		})
 		if err != nil {
 			http.Error(w, "error sending otp", http.StatusBadRequest)
 			return
@@ -43,7 +59,14 @@ func (user *UserController) userSignup(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"message": "Please enter the OTP sent to your email"})
 		return
 	} else {
-		if !EmailConn.VerifyOTP(req.Email, req.Otp) {
+		verifyotp, err := user.EmailConn.VerifyOTP(context.Background(), &pb.VerifyOTPRequest{
+			Otp:   req.Otp,
+			Email: req.Email,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		if !verifyotp.Verified {
 
 			http.Error(w, "otp verification failed please try again", http.StatusBadRequest)
 			return
@@ -172,7 +195,10 @@ func (user *UserController) addCategory(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+	if !helper.CheckString(req.Category) {
+		http.Error(w, "please enter a valid category name", http.StatusBadRequest)
+		return
+	}
 	_, err := user.Conn.AddCategory(context.Background(), req)
 	if err != nil {
 		helper.PrintError("error while adding category", err)
@@ -188,6 +214,10 @@ func (user *UserController) updateCategory(w http.ResponseWriter, r *http.Reques
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.PrintError("error while parsing json", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Category) {
+		http.Error(w, "please enter a valid category name", http.StatusBadRequest)
 		return
 	}
 	queryParams := r.URL.Query()
@@ -244,7 +274,13 @@ func (user *UserController) adminAddSkill(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+	if req.CategoryId == 0 {
+		http.Error(w, "please enter a valid category_id", http.StatusBadRequest)
+	}
+	if !helper.CheckString(req.Skill) {
+		http.Error(w, "please enter a valie skill name", http.StatusBadRequest)
+		return
+	}
 	if _, err := user.Conn.AddSkillAdmin(context.Background(), req); err != nil {
 		helper.PrintError("error while adding skill", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -259,6 +295,10 @@ func (user *UserController) adminUpdateSkill(w http.ResponseWriter, r *http.Requ
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.PrintError("error while parsing json", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Skill) {
+		http.Error(w, "please enter a valid skill ", http.StatusBadRequest)
 		return
 	}
 	queryParams := r.URL.Query()
@@ -325,7 +365,7 @@ func (user *UserController) addSkillUser(w http.ResponseWriter, r *http.Request)
 
 	if _, err := user.Conn.AddSkillUser(context.Background(), req); err != nil {
 		helper.PrintError("error while adding skill user", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "please enter a valid skill id", http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -395,6 +435,12 @@ func (user *UserController) getAllSkillsUser(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if len(skillsData) == 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"message":"no skills added"}`))
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
@@ -404,6 +450,10 @@ func (user *UserController) userAddLink(w http.ResponseWriter, r *http.Request) 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.PrintError("error parsing json", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidLink(req.Url) {
+		http.Error(w, "please enter a valid link", http.StatusBadRequest)
 		return
 	}
 	userID, ok := r.Context().Value("userId").(string)
@@ -467,6 +517,11 @@ func (user *UserController) getAllLinksUser(w http.ResponseWriter, r *http.Reque
 		}
 		linkData = append(linkData, link)
 	}
+	if len(linkData) == 0 {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"message":"no links added"}`))
+	}
 	jsonData, err := json.Marshal(linkData)
 	if err != nil {
 		helper.PrintError("error while marshalling to json", err)
@@ -476,4 +531,284 @@ func (user *UserController) getAllLinksUser(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
+}
+func (user *UserController) getProfile(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	userData, err := user.Conn.GetUser(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, "error retrieving user info", http.StatusBadRequest)
+		return
+	}
+	links, err := user.Conn.GetAllLinksUser(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, "error retrieving links", http.StatusBadRequest)
+		return
+	}
+	linkData := []*pb.LinkResponse{}
+	for {
+		link, err := links.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		linkData = append(linkData, link)
+	}
+	skills, err := user.Conn.GetAllSkillsUser(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	skillData := []*pb.SkillResponse{}
+	for {
+		skill, err := skills.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		skillData = append(skillData, skill)
+	}
+	address, err := user.Conn.UserGetAddress(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, "error while retrieving address", http.StatusBadRequest)
+		return
+	}
+	res := helperstruct.UserProfile{
+		Id:      userData.Id,
+		Name:    userData.Name,
+		Email:   userData.Email,
+		Phone:   userData.Phone,
+		Skills:  skillData,
+		Links:   linkData,
+		Address: address,
+	}
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+
+}
+func (user *UserController) jobApply(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	jobId := queryParams.Get("job_id")
+	req := &pb.JobApplyRequest{
+		JobId: jobId,
+	}
+	jobData, err := user.CompanyConn.GetJob(context.Background(), &pb.GetJobById{
+		Id: req.JobId,
+	})
+	if err != nil {
+		helper.PrintError("error while retrieving job info", err)
+		http.Error(w, "error while retrieving job info please enter a valid job_id", http.StatusBadRequest)
+		return
+	}
+	if jobData.Designation == "" {
+		http.Error(w, "please enter a valid job id", http.StatusBadRequest)
+		return
+	}
+	validUntil, err := time.Parse("2006-01-02 15:04:05 -0700 MST", jobData.ValidUntil)
+	if err != nil {
+		helper.PrintError("error parsing time", err)
+		http.Error(w, "error while parsing time to the correct format", http.StatusInternalServerError)
+		return
+	}
+	if time.Now().After(validUntil) {
+		http.Error(w, "failed to apply because the time period for accepting applications are over", http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if _, err := user.Conn.JobApply(context.Background(), req); err != nil {
+		helper.PrintError("error while applying for the job", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "applied successfully"}`))
+}
+func (user *UserController) userEditName(w http.ResponseWriter, r *http.Request) {
+	var req *pb.EditNameRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.PrintError("error parsing json", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if _, err := user.Conn.UserEditName(context.Background(), req); err != nil {
+		helper.PrintError("error while updating name", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.UpdateSuccessMsg)
+}
+func (user *UserController) userEditPhone(w http.ResponseWriter, r *http.Request) {
+	var req *pb.EditPhoneRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.PrintError("error while parsing json", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if !helper.CheckStringNumber(req.Phone) {
+		http.Error(w, "please provide a valid mobile number", http.StatusBadRequest)
+		return
+	}
+	if _, err := user.Conn.UserEditPhone(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.UpdateSuccessMsg)
+}
+func (user *UserController) addAddress(w http.ResponseWriter, r *http.Request) {
+	var req *pb.AddAddressRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.PrintError("error parsing json", err)
+		http.Error(w, "error parsing json", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Country) {
+		http.Error(w, "please provide a valid country name", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.State) {
+		http.Error(w, "please provide a valid State name", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.District) {
+		http.Error(w, "please provide a valid District name", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.City) {
+		http.Error(w, "please provide a valid City name", http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if _, err := user.Conn.UserAddAddress(context.Background(), req); err != nil {
+		helper.PrintError("error while adding address", err)
+		http.Error(w, "error while adding address", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
+}
+func (user *UserController) editAddress(w http.ResponseWriter, r *http.Request) {
+	var req *pb.AddressResponse
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.PrintError("error parsing json", err)
+		http.Error(w, "error parsing json", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Country) {
+		http.Error(w, "please provide a valid country name", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.State) {
+		http.Error(w, "please provide a valid State name", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.District) {
+		http.Error(w, "please provide a valid District name", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.City) {
+		http.Error(w, "please provide a valid City name", http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if _, err := user.Conn.UserEditAddress(context.Background(), req); err != nil {
+		helper.PrintError("error while updating address", err)
+		http.Error(w, "error while updating address", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.UpdateSuccessMsg)
+}
+func (user *UserController) getAddress(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req := &pb.GetUserById{
+		Id: userID,
+	}
+	address, err := user.Conn.UserGetAddress(context.Background(), req)
+	if err != nil {
+		helper.PrintError("error while retrieving address", err)
+		http.Error(w, "error while retrieving address", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if address.Country == "" {
+		w.Write([]byte(`{"message":"please add address"}`))
+		return
+	}
+	jsonData, err := json.Marshal(address)
+	if err != nil {
+		helper.PrintError("error marshalling to json", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
+
 }
