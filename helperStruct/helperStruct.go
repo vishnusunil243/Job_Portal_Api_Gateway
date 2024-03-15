@@ -7,6 +7,7 @@ type CompanyProfile struct {
 	Name       string
 	Email      string
 	Phone      string
+	Image      string `json:"image,omitempty"`
 	CategoryId int
 	Category   string
 	Links      []*pb.CompanyLinkResponse
@@ -17,7 +18,12 @@ type UserProfile struct {
 	Name    string
 	Email   string
 	Phone   string
+	Image   string `json:"image,omitempty"`
 	Skills  []*pb.SkillResponse
 	Links   []*pb.LinkResponse
 	Address *pb.AddressResponse
+}
+type JobHelper struct {
+	JobResponse *pb.JobResponse
+	JobSkills   []*pb.JobSkillResponse
 }

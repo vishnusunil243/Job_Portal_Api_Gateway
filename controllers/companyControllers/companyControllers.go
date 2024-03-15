@@ -164,15 +164,15 @@ func (c *CompanyControllers) addJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "please enter a valid designation", http.StatusBadRequest)
 		return
 	}
-	if !helper.CheckNegative(int32(req.Salaryrange.MaxSalary)) {
+	if helper.CheckNegative(int32(req.Salaryrange.MaxSalary)) {
 		http.Error(w, "please enter a valid max salary", http.StatusBadRequest)
 		return
 	}
-	if !helper.CheckNegative(int32(req.Salaryrange.MinSalary)) {
+	if helper.CheckNegative(int32(req.Salaryrange.MinSalary)) {
 		http.Error(w, "please enter a valid min salary", http.StatusBadRequest)
 		return
 	}
-	if !helper.CheckNegative(req.Vacancy) {
+	if helper.CheckNegative(req.Vacancy) {
 		http.Error(w, "please enter a valid vacancy", http.StatusBadRequest)
 		return
 	}
@@ -201,6 +201,50 @@ func (c *CompanyControllers) addJob(w http.ResponseWriter, r *http.Request) {
 }
 func (c *CompanyControllers) getAllJobs(w http.ResponseWriter, r *http.Request) {
 	jobRes := []*pb.JobResponse{}
+	queryParams := r.URL.Query()
+	jobID := queryParams.Get("job_id")
+	if jobID != "" {
+		job, err := c.Conn.GetJob(context.Background(), &pb.GetJobById{
+			Id: jobID,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jobskills, err := c.Conn.GetAllJobSkill(context.Background(), &pb.GetJobById{
+			Id: jobID,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jobData := []*pb.JobSkillResponse{}
+		for {
+			job, err := jobskills.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			jobData = append(jobData, job)
+		}
+		res := &helperstruct.JobHelper{
+			JobResponse: job,
+			JobSkills:   jobData,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		jsonData, err := json.Marshal(res)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Write(jsonData)
+		return
+
+	}
 	jobs, err := c.Conn.GetAllJobs(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -287,23 +331,31 @@ func (c *CompanyControllers) updateJobs(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	req.JobId = jobID
-	if !helper.CheckNegative(req.Capacity) {
+	if helper.CheckNegative(req.Capacity) {
 		http.Error(w, "please enter a valid capacity", http.StatusBadRequest)
 		return
 	}
-	if !helper.CheckNegative(req.Hired) {
+	if helper.CheckNegative(req.Hired) {
 		http.Error(w, "please enter a valid hired field", http.StatusBadRequest)
 		return
 	}
 	if req.JobId == "" {
-		http.Error(w, "can't get job id", http.StatusBadRequest)
+		http.Error(w, "can't retrieve job id", http.StatusBadRequest)
 		return
 	}
 	if !helper.CheckString(req.Designation) {
 		http.Error(w, "please enter a valid designation", http.StatusBadRequest)
 		return
 	}
-	if !helper.CheckNegativeStringNumber(req.MinExperience) {
+	if helper.CheckNegativeStringNumber(req.MinExperience) {
+		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckYear(req.MinExperience) {
+		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckNumberInString(req.MinExperience) {
 		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
 		return
 	}
@@ -420,7 +472,8 @@ func (company *CompanyControllers) getAllJobSkill(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	if len(jobSkillData) == 0 {
-		w.Write([]byte(`{message:"no specific skills required"}`))
+		w.Write([]byte(`{"message":"no specific skills required"}`))
+		return
 	}
 	w.Write(jsonData)
 }
@@ -562,12 +615,20 @@ func (company *CompanyControllers) getProfile(w http.ResponseWriter, r *http.Req
 		http.Error(w, "error while retrieving address", http.StatusBadRequest)
 		return
 	}
+	imageData, err := company.Conn.GetProfilePic(context.Background(), &pb.GetJobByCompanyId{
+		Id: companyID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	res := helperstruct.CompanyProfile{
 		Id:         companyID,
 		Name:       companyData.Name,
 		Email:      companyData.Email,
 		Phone:      companyData.Phone,
 		Category:   category.Category,
+		Image:      imageData.Url,
 		CategoryId: int(companyData.CategoryId),
 		Links:      linkData,
 		Address:    address,
@@ -737,4 +798,46 @@ func (company *CompanyControllers) editPhone(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(helper.UpdateSuccessMsg)
+}
+func (company *CompanyControllers) uploadProfilePic(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "unable to parse form", http.StatusBadRequest)
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "unable to get file from request", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "error reading file", http.StatusInternalServerError)
+		return
+	}
+	companyID, ok := r.Context().Value("companyId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req := &pb.CompanyImageRequest{
+		ObjectName: fmt.Sprintf("%s-profile", companyID),
+		ImageData:  fileBytes,
+		CompanyId:  companyID,
+	}
+	res, err := company.Conn.CompanyUploadProfileImage(context.Background(), req)
+	if err != nil {
+		http.Error(w, "error while uploading image", http.StatusBadRequest)
+		return
+	}
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, "error while marshalling to json", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
 }

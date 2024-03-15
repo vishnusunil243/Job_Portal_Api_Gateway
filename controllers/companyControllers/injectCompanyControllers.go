@@ -55,4 +55,5 @@ func (company *CompanyControllers) InitialiseCompanyControllers(r *chi.Mux) {
 	r.Get("/company/profile/address", middleware.CompanyMiddleware(company.getAddress))
 	r.Patch("/company/profile/name", middleware.CompanyMiddleware(company.editName))
 	r.Patch("/company/profile/phone", middleware.CompanyMiddleware(company.editPhone))
+	r.Post("/company/profile/image", middleware.CompanyMiddleware(company.uploadProfilePic))
 }

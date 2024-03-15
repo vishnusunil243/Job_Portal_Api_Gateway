@@ -49,4 +49,6 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Post("/user/profile/address", middleware.UserMiddleware(user.addAddress))
 	r.Patch("/user/profile/address", middleware.UserMiddleware(user.editAddress))
 	r.Get("/user/profile/address", middleware.UserMiddleware(user.getAddress))
+	r.Post("/user/profile/image", middleware.UserMiddleware(user.uploadProfilePic))
+	r.Get("/user/jobs/applied", middleware.UserMiddleware(user.getAppliedJobs))
 }

@@ -591,12 +591,20 @@ func (user *UserController) getProfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error while retrieving address", http.StatusBadRequest)
 		return
 	}
+	imageData, err := user.Conn.UserGetProfilePic(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	res := helperstruct.UserProfile{
 		Id:      userData.Id,
 		Name:    userData.Name,
 		Email:   userData.Email,
 		Phone:   userData.Phone,
 		Skills:  skillData,
+		Image:   imageData.Url,
 		Links:   linkData,
 		Address: address,
 	}
@@ -811,4 +819,91 @@ func (user *UserController) getAddress(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write(jsonData)
 
+}
+func (user *UserController) uploadProfilePic(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "unable to parse form", http.StatusBadRequest)
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "unable to get file from request", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "error reading file", http.StatusInternalServerError)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req := &pb.UserImageRequest{
+		ObjectName: fmt.Sprintf("%s-profile", userID),
+		ImageData:  fileBytes,
+		UserId:     userID,
+	}
+	res, err := user.Conn.UserUploadProfileImage(context.Background(), req)
+	if err != nil {
+		http.Error(w, "error while uploading image", http.StatusBadRequest)
+		return
+	}
+	jsonData, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, "error while marshalling to json", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}
+func (user *UserController) getAppliedJobs(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	jobids, err := user.Conn.UserAppliedJobs(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	jobData := []*pb.JobResponse{}
+	for {
+		jobid, err := jobids.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		job, err := user.CompanyConn.GetJob(context.Background(), &pb.GetJobById{
+			Id: jobid.JobId,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jobData = append(jobData, job)
+	}
+	jsonData, err := json.Marshal(jobData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(jobData) == 0 {
+		w.Write([]byte(`{"message":"no jobs applied yet"}`))
+	}
+	w.Write(jsonData)
 }

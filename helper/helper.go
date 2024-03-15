@@ -49,6 +49,20 @@ func CheckNegativeStringNumber(s string) bool {
 	}
 	return false
 }
+func CheckNumberInString(s string) bool {
+	for _, sr := range s {
+		if unicode.IsNumber(sr) {
+			return true
+		}
+	}
+	return false
+}
+func CheckYear(s string) bool {
+	if strings.HasSuffix(s, "years") {
+		return true
+	}
+	return false
+}
 func ValidEmail(s string) bool {
 	if strings.Contains(s, "@") {
 		return true
