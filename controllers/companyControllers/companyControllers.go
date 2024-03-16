@@ -153,6 +153,19 @@ func (c *CompanyControllers) companyLogin(w http.ResponseWriter, r *http.Request
 	w.Write(jsonData)
 
 }
+func (user *CompanyControllers) companyLogout(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:     "CompanyToken",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "Logged out successfully"}`))
+}
 func (c *CompanyControllers) addJob(w http.ResponseWriter, r *http.Request) {
 	var req *pb.AddJobRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

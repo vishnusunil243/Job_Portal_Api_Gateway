@@ -188,6 +188,32 @@ func (user *UserController) adminLogin(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
 }
+func (user *UserController) userLogout(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:     "UserToken",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "Logged out successfully"}`))
+}
+func (user *UserController) adminLogout(w http.ResponseWriter, r *http.Request) {
+	cookie := &http.Cookie{
+		Name:     "AdminToken",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "Logged out successfully"}`))
+}
 func (user *UserController) addCategory(w http.ResponseWriter, r *http.Request) {
 	var req *pb.AddCategoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -365,7 +391,7 @@ func (user *UserController) addSkillUser(w http.ResponseWriter, r *http.Request)
 
 	if _, err := user.Conn.AddSkillUser(context.Background(), req); err != nil {
 		helper.PrintError("error while adding skill user", err)
-		http.Error(w, "please enter a valid skill id", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -676,6 +702,10 @@ func (user *UserController) userEditName(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	req.UserId = userID
+	if !helper.CheckString(req.Name) {
+		http.Error(w, "please enter a valid name", http.StatusBadRequest)
+		return
+	}
 	if _, err := user.Conn.UserEditName(context.Background(), req); err != nil {
 		helper.PrintError("error while updating name", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -743,7 +773,7 @@ func (user *UserController) addAddress(w http.ResponseWriter, r *http.Request) {
 	req.UserId = userID
 	if _, err := user.Conn.UserAddAddress(context.Background(), req); err != nil {
 		helper.PrintError("error while adding address", err)
-		http.Error(w, "error while adding address", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

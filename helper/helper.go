@@ -27,6 +27,9 @@ func CheckString(s string) bool {
 			return false
 		}
 	}
+	if len(s) == 0 {
+		return false
+	}
 	return true
 }
 func CheckStringNumber(s string) bool {
@@ -34,7 +37,7 @@ func CheckStringNumber(s string) bool {
 	if err != nil {
 		return false
 	}
-	return true
+	return len(s) == 10
 }
 func CheckNegative(num int32) bool {
 	if num < 0 {

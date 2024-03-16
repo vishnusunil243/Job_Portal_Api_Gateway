@@ -28,8 +28,10 @@ func NewUserServiceClient(conn *grpc.ClientConn, secret string) *UserController 
 func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Post("/user/signup", user.userSignup)
 	r.Post("/user/login", user.userLogin)
+	r.Post("/user/logout", middleware.UserMiddleware(user.userLogout))
 
 	r.Post("/admin/login", user.adminLogin)
+	r.Post("/admin/logout", middleware.AdminMiddleware(user.adminLogout))
 	r.Post("/admin/category/add", middleware.AdminMiddleware(user.addCategory))
 	r.Patch("/admin/category", middleware.AdminMiddleware(user.updateCategory))
 	r.Get("/admin/category", user.getAllCategories)

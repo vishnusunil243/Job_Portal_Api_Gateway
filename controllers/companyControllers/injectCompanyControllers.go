@@ -36,6 +36,7 @@ func NewCompanyServiceClient(conn *grpc.ClientConn, secret string) *CompanyContr
 func (company *CompanyControllers) InitialiseCompanyControllers(r *chi.Mux) {
 	r.Post("/company/signup", company.companySignup)
 	r.Post("/company/login", company.companyLogin)
+	r.Post("/company/logout", middleware.CompanyMiddleware(company.companyLogout))
 	r.Get("/company/jobs", middleware.CompanyMiddleware(company.getAllJobsForCompany))
 	r.Post("/company/jobs/add", middleware.CompanyMiddleware(company.addJob))
 	r.Get("/jobs", company.getAllJobs)
