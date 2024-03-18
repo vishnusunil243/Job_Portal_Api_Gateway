@@ -569,6 +569,7 @@ func (user *UserController) getProfile(w http.ResponseWriter, r *http.Request) {
 		Id: userID,
 	})
 	if err != nil {
+		helper.PrintError("error retrieving user", err)
 		http.Error(w, "error retrieving user info", http.StatusBadRequest)
 		return
 	}
@@ -625,14 +626,15 @@ func (user *UserController) getProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res := helperstruct.UserProfile{
-		Id:      userData.Id,
-		Name:    userData.Name,
-		Email:   userData.Email,
-		Phone:   userData.Phone,
-		Skills:  skillData,
-		Image:   imageData.Url,
-		Links:   linkData,
-		Address: address,
+		Id:                       userData.Id,
+		Name:                     userData.Name,
+		Email:                    userData.Email,
+		Phone:                    userData.Phone,
+		Skills:                   skillData,
+		Image:                    imageData.Url,
+		Links:                    linkData,
+		Address:                  address,
+		ExperienceInCurrentField: userData.ExperienceInCurrentField,
 	}
 	jsonData, err := json.Marshal(res)
 	if err != nil {
@@ -936,4 +938,109 @@ func (user *UserController) getAppliedJobs(w http.ResponseWriter, r *http.Reques
 		w.Write([]byte(`{"message":"no jobs applied yet"}`))
 	}
 	w.Write(jsonData)
+}
+func (user *UserController) jobSearch(w http.ResponseWriter, r *http.Request) {
+	var req *pb.JobSearchRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	jobs, err := user.CompanyConn.JobSearch(context.Background(), req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	jobData := []*pb.JobResponse{}
+	for {
+		job, err := jobs.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jobData = append(jobData, job)
+	}
+	jsonData, err := json.Marshal(jobData)
+	if err != nil {
+		helper.PrintError("error marshalling to jsob", err)
+		http.Error(w, "error marshalling to json", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}
+func (user *UserController) getHome(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	jobs, err := user.CompanyConn.GetHome(context.Background(), &pb.GetHomeRequest{
+		UserId: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	jobData := []*pb.JobResponse{}
+	for {
+		job, err := jobs.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		jobData = append(jobData, job)
+	}
+	jsonData, err := json.Marshal(jobData)
+	if err != nil {
+		http.Error(w, "error marshalling to json", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}
+func (user *UserController) addExperience(w http.ResponseWriter, r *http.Request) {
+	var req *pb.AddExperienceRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckNumberInString(req.Experience) {
+		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckYear(req.Experience) {
+		http.Error(w, "pleae enter a valid experience which contains the number of years", http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if _, err := user.Conn.AddExperience(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
 }

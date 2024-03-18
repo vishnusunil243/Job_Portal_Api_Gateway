@@ -14,14 +14,15 @@ type CompanyProfile struct {
 	Address    *pb.CompanyAddressResponse
 }
 type UserProfile struct {
-	Id      string
-	Name    string
-	Email   string
-	Phone   string
-	Image   string `json:"image,omitempty"`
-	Skills  []*pb.SkillResponse
-	Links   []*pb.LinkResponse
-	Address *pb.AddressResponse
+	Id                       string
+	Name                     string
+	Email                    string
+	Phone                    string
+	Image                    string `json:"image,omitempty"`
+	ExperienceInCurrentField string `json:"experience_in_current_field,omitempty"`
+	Skills                   []*pb.SkillResponse
+	Links                    []*pb.LinkResponse
+	Address                  *pb.AddressResponse
 }
 type JobHelper struct {
 	JobResponse *pb.JobResponse

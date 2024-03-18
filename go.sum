@@ -66,6 +66,16 @@ github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240315102111-86c5791a3
 github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240315102111-86c5791a3e91/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
 github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240315124636-e3cec3056384 h1:MYFPJTjGcuo7lE8c0aPJ4bf8c5q8G4fkD22sk9h5v/U=
 github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240315124636-e3cec3056384/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318054732-bdd19b6316d8 h1:4ZvV1jccyu2nkhwMcgX3tlO/ALgOBLGB+D1//AD0Cf4=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318054732-bdd19b6316d8/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318062247-1dcf695c7785 h1:PiHeggSEmp3L1DxXkzPJWvlz4XW+Jl7TpqAWPzZIN28=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318062247-1dcf695c7785/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318091015-e2e7ccdb8a4e h1:9p18avG/+P6z21C8jdNf9ag1B6GuPJIFXBIOb3Zrx1k=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318091015-e2e7ccdb8a4e/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318125426-2481087d1439 h1:nMzaCXhFiKiHlaQEHlCSlM+QKqeQOY1iNNsoEG47euM=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318125426-2481087d1439/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318131458-34955f820bda h1:6VGaGAseTXMxwrVNHJxRVIbPCmhzy9Vjo6H4tO3lcAk=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318131458-34955f820bda/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
 golang.org/x/net v0.20.0 h1:aCL9BSgETF1k+blQaYUBx9hJ9LOGP3gAVemcZlf1Kpo=
 golang.org/x/net v0.20.0/go.mod h1:z8BVo6PvndSri0LbOE3hAn0apkU+1YvI6E70E9jsnvY=
 golang.org/x/sys v0.16.0 h1:xWw16ngr6ZMtmxDyKyIgsE93KNKz5HKmMa3b8ALHidU=

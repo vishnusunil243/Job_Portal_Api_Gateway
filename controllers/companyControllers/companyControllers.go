@@ -189,6 +189,20 @@ func (c *CompanyControllers) addJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "please enter a valid vacancy", http.StatusBadRequest)
 		return
 	}
+	if req.MinExperience != "" {
+		if helper.CheckNegativeStringNumber(req.MinExperience) {
+			http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+			return
+		}
+		if !helper.CheckYear(req.MinExperience) {
+			http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+			return
+		}
+		if !helper.CheckNumberInString(req.MinExperience) {
+			http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+			return
+		}
+	}
 	companyID, ok := r.Context().Value("companyId").(string)
 	if !ok {
 		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
@@ -360,17 +374,19 @@ func (c *CompanyControllers) updateJobs(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "please enter a valid designation", http.StatusBadRequest)
 		return
 	}
-	if helper.CheckNegativeStringNumber(req.MinExperience) {
-		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
-		return
-	}
-	if !helper.CheckYear(req.MinExperience) {
-		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
-		return
-	}
-	if !helper.CheckNumberInString(req.MinExperience) {
-		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
-		return
+	if req.MinExperience != "" {
+		if helper.CheckNegativeStringNumber(req.MinExperience) {
+			http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+			return
+		}
+		if !helper.CheckYear(req.MinExperience) {
+			http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+			return
+		}
+		if !helper.CheckNumberInString(req.MinExperience) {
+			http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+			return
+		}
 	}
 	_, err := c.Conn.UpdateJobs(context.Background(), req)
 	if err != nil {
@@ -852,5 +868,39 @@ func (company *CompanyControllers) uploadProfilePic(w http.ResponseWriter, r *ht
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}
+func (company *CompanyControllers) getAppliedUsers(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	jobID := queryParams.Get("job_id")
+	users, err := company.UserConn.GetAppliedUsersByJobId(context.Background(), &pb.JobIdRequest{
+		JobId: jobID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userData := []*pb.GetUserResponse{}
+	for {
+		user, err := users.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		userData = append(userData, user)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(userData) == 0 {
+		w.Write([]byte(`{"message":"no user's have applied yet"}`))
+	}
+	jsonData, err := json.Marshal(userData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	w.Write(jsonData)
 }
