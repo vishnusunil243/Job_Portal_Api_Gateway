@@ -1044,3 +1044,203 @@ func (user *UserController) addExperience(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(helper.AdditionSuccessMsg)
 }
+func (user *UserController) notifyMe(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	companyID := queryParams.Get("company_id")
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req := &pb.NotifyMeRequest{
+		UserId:    userID,
+		CompanyId: companyID,
+	}
+	if _, err := user.CompanyConn.NotifyMe(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"notifications enabled successfully"}`))
+}
+func (user *UserController) cancelNotify(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	companyID := queryParams.Get("company_id")
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req := &pb.NotifyMeRequest{
+		UserId:    userID,
+		CompanyId: companyID,
+	}
+	if _, err := user.CompanyConn.CancelNotify(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"notifications disabled successfully"}`))
+}
+func (user *UserController) getAllNotifyMe(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	companies, err := user.CompanyConn.GetAllNotifyMe(context.Background(), &pb.GetHomeRequest{
+		UserId: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	companyData := []*pb.NotifyMeResponse{}
+	for {
+		company, err := companies.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		companyData = append(companyData, company)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(companyData) == 0 {
+		w.Write([]byte(`{"message":"notifications are not yet enabled for any of the companies"}`))
+		return
+	}
+	jsonData, err := json.Marshal(companyData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Write(jsonData)
+}
+func (user *UserController) getAllNotifications(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	notifications, err := user.EmailConn.GetAllNotifications(context.Background(), &pb.GetNotificationsByUserId{
+		UserId: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	notificationData := []*pb.NotificationResponse{}
+	for {
+		notification, err := notifications.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		notificationData = append(notificationData, notification)
+	}
+	jsonData, err := json.Marshal(notificationData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(notificationData) == 0 {
+		w.Write([]byte(`{"message":"you don't have any notifications yet"}`))
+		return
+	}
+	w.Write(jsonData)
+}
+func (user *UserController) addReviewForCompany(w http.ResponseWriter, r *http.Request) {
+	var req *pb.UserReviewRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	queryParams := r.URL.Query()
+	companyId := queryParams.Get("company_id")
+	req.UserId = userID
+	req.CompanyId = companyId
+	if _, err := user.ReviewConn.UserAddReview(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
+}
+func (user *UserController) getReviewForCompany(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	companyId := queryParams.Get("company_id")
+	reviews, err := user.ReviewConn.GetCompanyReview(context.Background(), &pb.ReviewByCompanyId{
+		CompanyId: companyId,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	reviewData := []*pb.ReviewResponse{}
+	for {
+		review, err := reviews.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		reviewData = append(reviewData, review)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(reviewData) == 0 {
+		w.Write([]byte(`{"message":"no review yet"}`))
+		return
+	}
+	jsonData, err := json.Marshal(reviewData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Write(jsonData)
+}
+func (user *UserController) deleteReview(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	companyId := queryParams.Get("company_id")
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req := &pb.UserReviewRequest{
+		UserId:    userID,
+		CompanyId: companyId,
+	}
+	if _, err := user.ReviewConn.RemoveReview(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.DeleteSuccessMsg)
+}

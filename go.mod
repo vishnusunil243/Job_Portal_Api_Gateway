@@ -6,7 +6,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v1.5.5
 	github.com/joho/godotenv v1.5.1
-	github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240318131458-34955f820bda
+	github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240320172748-05082cb440d1
 	google.golang.org/grpc v1.62.1
 )
 

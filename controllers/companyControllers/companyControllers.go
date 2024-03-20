@@ -904,3 +904,55 @@ func (company *CompanyControllers) getAppliedUsers(w http.ResponseWriter, r *htt
 	}
 	w.Write(jsonData)
 }
+func (company *CompanyControllers) addToShortlist(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	jobID := queryParams.Get("job_id")
+	userID := queryParams.Get("user_id")
+	req := &pb.AddToShortListRequest{
+		JobId:  jobID,
+		UserId: userID,
+	}
+	if _, err := company.UserConn.AddToShortlist(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
+
+}
+func (company *CompanyControllers) getShortlist(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	jobID := queryParams.Get("job_id")
+	shortlists, err := company.UserConn.GetShortlist(context.Background(), &pb.JobIdRequest{
+		JobId: jobID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	shortlistData := []*pb.GetUserResponse{}
+	for {
+		shortlist, err := shortlists.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		shortlistData = append(shortlistData, shortlist)
+	}
+	jsonData, err := json.Marshal(shortlistData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(shortlistData) == 0 {
+		w.Write([]byte(`{"message":"no user has been shortlisted yet"}`))
+		return
+	}
+	w.Write(jsonData)
+}

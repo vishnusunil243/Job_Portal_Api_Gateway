@@ -12,16 +12,19 @@ type UserController struct {
 	Conn        pb.UserServiceClient
 	CompanyConn pb.CompanyServiceClient
 	EmailConn   pb.EmailServiceClient
+	ReviewConn  pb.SearchServiceClient
 	Secret      string
 }
 
 func NewUserServiceClient(conn *grpc.ClientConn, secret string) *UserController {
 	comConn, _ := helper.DialGrpc("localhost:8082")
 	emailConn, _ := helper.DialGrpc("localhost:8087")
+	reviewConn, _ := helper.DialGrpc("localhost:8083")
 	return &UserController{
 		Conn:        pb.NewUserServiceClient(conn),
 		EmailConn:   pb.NewEmailServiceClient(emailConn),
 		CompanyConn: pb.NewCompanyServiceClient(comConn),
+		ReviewConn:  pb.NewSearchServiceClient(reviewConn),
 		Secret:      secret,
 	}
 }
@@ -56,4 +59,11 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Get("/user/jobs/applied", middleware.UserMiddleware(user.getAppliedJobs))
 	r.Post("/jobs/search", middleware.UserMiddleware(user.jobSearch))
 	r.Get("/home", middleware.UserMiddleware(user.getHome))
+	r.Post("/user/company/notifyme", middleware.UserMiddleware(user.notifyMe))
+	r.Delete("/user/company/notifyme", middleware.UserMiddleware(user.cancelNotify))
+	r.Get("/notifyme", middleware.UserMiddleware(user.getAllNotifyMe))
+	r.Get("/user/notifications", middleware.UserMiddleware(user.getAllNotifications))
+	r.Post("/user/company/review", middleware.UserMiddleware(user.addReviewForCompany))
+	r.Get("/company/review", user.getReviewForCompany)
+	r.Delete("/user/company/review", middleware.UserMiddleware(user.deleteReview))
 }
