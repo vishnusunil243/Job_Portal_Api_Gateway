@@ -66,4 +66,9 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Post("/user/company/review", middleware.UserMiddleware(user.addReviewForCompany))
 	r.Get("/company/review", user.getReviewForCompany)
 	r.Delete("/user/company/review", middleware.UserMiddleware(user.deleteReview))
+	r.Post("/user/profile/education", middleware.UserMiddleware(user.addEducation))
+	r.Patch("/user/profile/education", middleware.UserMiddleware(user.editEducation))
+	// r.Delete("/user/profile/education",middleware.UserMiddleware(user.))
+	r.Post("/user/block", middleware.AdminMiddleware(user.blockUser))
+	r.Post("/user/unblock", middleware.AdminMiddleware(user.unblockUser))
 }

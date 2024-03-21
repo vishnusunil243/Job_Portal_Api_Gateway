@@ -625,6 +625,25 @@ func (user *UserController) getProfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	educations, err := user.Conn.GetEducation(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	educationData := []*pb.EducationResponse{}
+	for {
+		education, err := educations.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		educationData = append(educationData, education)
+	}
 	res := helperstruct.UserProfile{
 		Id:                       userData.Id,
 		Name:                     userData.Name,
@@ -634,6 +653,7 @@ func (user *UserController) getProfile(w http.ResponseWriter, r *http.Request) {
 		Image:                    imageData.Url,
 		Links:                    linkData,
 		Address:                  address,
+		Education:                educationData,
 		ExperienceInCurrentField: userData.ExperienceInCurrentField,
 	}
 	jsonData, err := json.Marshal(res)
@@ -1243,4 +1263,118 @@ func (user *UserController) deleteReview(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(helper.DeleteSuccessMsg)
+}
+func (user *UserController) addEducation(w http.ResponseWriter, r *http.Request) {
+	var req *pb.EducationRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Degree) {
+		http.Error(w, "please provide a valid degree", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Institution) {
+		http.Error(w, "please enter a valid institution name", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidDate(req.StartDate) {
+		http.Error(w, "please enter a valid start date", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidDate(req.EndDate) {
+		http.Error(w, "please enter a valid end date", http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	if _, err := user.Conn.AddEducation(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
+}
+func (user *UserController) editEducation(w http.ResponseWriter, r *http.Request) {
+	var req *pb.EducationResponse
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Degree) {
+		http.Error(w, "please provide a valid degree", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Institution) {
+		http.Error(w, "please enter a valid institution name", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidDate(req.StartDate) {
+		http.Error(w, "please enter a valid start date", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidDate(req.EndDate) {
+		http.Error(w, "please enter a valid end date", http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	req.UserId = userID
+	queryParams := r.URL.Query()
+	educationId := queryParams.Get("education_id")
+	req.Id = educationId
+	if _, err := user.Conn.EditEducation(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.UpdateSuccessMsg)
+}
+
+//	func (user *UserController)removeEducation(w http.ResponseWriter,r *http.Request){
+//		queryParams := r.URL.Query()
+//		educationId := queryParams.Get("education_id")
+//		if _,err:=user.Conn.
+//	}
+func (user *UserController) blockUser(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userId := queryParams.Get("user_id")
+	if userId == "" {
+		http.Error(w, "please provide a valid userID", http.StatusBadRequest)
+		return
+	}
+	_, err := user.Conn.BlockUser(context.Background(), &pb.GetUserById{
+		Id: userId,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"user blocked successfully"}`))
+}
+func (user *UserController) unblockUser(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userId := queryParams.Get("user_id")
+	if _, err := user.Conn.UnblockUser(context.Background(), &pb.GetUserById{
+		Id: userId,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"user unblocked successfully"}`))
 }

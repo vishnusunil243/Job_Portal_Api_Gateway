@@ -956,3 +956,86 @@ func (company *CompanyControllers) getShortlist(w http.ResponseWriter, r *http.R
 	}
 	w.Write(jsonData)
 }
+func (company *CompanyControllers) getAllCompanies(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	companyId := queryParams.Get("company_id")
+	if companyId != "" {
+		companyData, err := company.Conn.GetCompany(context.Background(), &pb.GetJobByCompanyId{
+			Id: companyId,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		jsonData, err := json.Marshal(companyData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Write(jsonData)
+		return
+	}
+	companies, err := company.Conn.GetAllCompany(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	companyData := []*pb.CompanyResponse{}
+	for {
+		company, err := companies.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		companyData = append(companyData, company)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(companyData) == 0 {
+		w.Write([]byte(`{"message":"no companies yet"}`))
+		return
+	}
+	jsonData, err := json.Marshal(companyData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Write(jsonData)
+
+}
+func (company *CompanyControllers) blockCompany(w http.ResponseWriter, r *http.Request) {
+
+	queryParams := r.URL.Query()
+	companyId := queryParams.Get("company_id")
+	if companyId == "" {
+		http.Error(w, "please provide a valid companyId", http.StatusBadRequest)
+		return
+	}
+	if _, err := company.Conn.BlockCompany(context.Background(), &pb.GetJobByCompanyId{
+		Id: companyId,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"company blocked successfully"}`))
+}
+func (company *CompanyControllers) unblockCompany(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	companyId := queryParams.Get("company_id")
+	if _, err := company.Conn.BlockCompany(context.Background(), &pb.GetJobByCompanyId{
+		Id: companyId,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"company unblocked successfully"}`))
+}

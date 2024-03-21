@@ -22,6 +22,7 @@ type UserProfile struct {
 	ExperienceInCurrentField string `json:"experience_in_current_field,omitempty"`
 	Skills                   []*pb.SkillResponse
 	Links                    []*pb.LinkResponse
+	Education                []*pb.EducationResponse
 	Address                  *pb.AddressResponse
 }
 type JobHelper struct {

@@ -60,4 +60,7 @@ func (company *CompanyControllers) InitialiseCompanyControllers(r *chi.Mux) {
 	r.Get("/company/job/applied", middleware.CompanyMiddleware(company.getAppliedUsers))
 	r.Post("/company/job/shortlist", middleware.CompanyMiddleware(company.addToShortlist))
 	r.Get("/company/job/shortlist", middleware.CompanyMiddleware(company.getShortlist))
+	r.Get("/company", company.getAllCompanies)
+	r.Post("/company/block", middleware.AdminMiddleware(company.blockCompany))
+	r.Post("/company/unblock", middleware.AdminMiddleware(company.unblockCompany))
 }

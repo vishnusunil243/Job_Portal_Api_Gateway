@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"google.golang.org/grpc"
@@ -101,6 +102,14 @@ func IsStrongPassword(password string) bool {
 }
 func ValidLink(link string) bool {
 	if !strings.HasPrefix(link, "https://") {
+		return false
+	}
+	return true
+}
+func ValidDate(date string) bool {
+	layout := "02-01-2006"
+	_, err := time.Parse(layout, date)
+	if err != nil {
 		return false
 	}
 	return true
