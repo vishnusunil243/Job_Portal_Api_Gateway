@@ -1039,6 +1039,10 @@ func (user *UserController) addExperience(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if helper.CheckNegativeStringNumber(req.Experience) {
+		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
+		return
+	}
 	if !helper.CheckNumberInString(req.Experience) {
 		http.Error(w, "please enter a valid experience", http.StatusBadRequest)
 		return
@@ -1451,4 +1455,21 @@ func (user *UserController) getInterviews(w http.ResponseWriter, r *http.Request
 		return
 	}
 	w.Write(jsonData)
+}
+func (user *UserController) reportUser(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userId := queryParams.Get("user_id")
+	if userId == "" {
+		http.Error(w, "please select a user to report", http.StatusBadRequest)
+		return
+	}
+	if _, err := user.Conn.ReportUser(context.Background(), &pb.GetUserById{
+		Id: userId,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"user reported successfully"}`))
 }

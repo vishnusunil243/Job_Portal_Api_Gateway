@@ -72,5 +72,5 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Patch("/user/profile/education", middleware.UserMiddleware(user.editEducation))
 	r.Delete("/user/profile/education", middleware.UserMiddleware(user.removeEducation))
 	r.Get("/user/interviews", middleware.UserMiddleware(user.getInterviews))
-
+	r.Post("/user/report", middleware.CompanyMiddleware(user.reportUser))
 }
