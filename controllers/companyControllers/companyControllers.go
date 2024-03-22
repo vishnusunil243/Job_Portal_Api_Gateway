@@ -876,6 +876,10 @@ func (company *CompanyControllers) getAppliedUsers(w http.ResponseWriter, r *htt
 	users, err := company.UserConn.GetAppliedUsersByJobId(context.Background(), &pb.JobIdRequest{
 		JobId: jobID,
 	})
+	if jobID == "" {
+		http.Error(w, "please select a job to proceed", http.StatusBadRequest)
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -896,6 +900,7 @@ func (company *CompanyControllers) getAppliedUsers(w http.ResponseWriter, r *htt
 	w.Header().Set("Content-Type", "application/json")
 	if len(userData) == 0 {
 		w.Write([]byte(`{"message":"no user's have applied yet"}`))
+		return
 	}
 	jsonData, err := json.Marshal(userData)
 	if err != nil {
@@ -911,6 +916,14 @@ func (company *CompanyControllers) addToShortlist(w http.ResponseWriter, r *http
 	req := &pb.AddToShortListRequest{
 		JobId:  jobID,
 		UserId: userID,
+	}
+	if jobID == "" {
+		http.Error(w, "please select a job to add to shortlist", http.StatusBadRequest)
+		return
+	}
+	if userID == "" {
+		http.Error(w, "please select a user from the applied ones to add to shortlist", http.StatusBadRequest)
+		return
 	}
 	if _, err := company.UserConn.AddToShortlist(context.Background(), req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1038,4 +1051,27 @@ func (company *CompanyControllers) unblockCompany(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message":"company unblocked successfully"}`))
+}
+func (company *CompanyControllers) interviewSchedule(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	jobID := queryParams.Get("job_id")
+	userID := queryParams.Get("user_id")
+	var req *pb.InterviewScheduleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidDate(req.Date) {
+		http.Error(w, "please enter a valid date in  dd-mm-yyyy format", http.StatusBadRequest)
+		return
+	}
+	req.JobId = jobID
+	req.UserId = userID
+	if _, err := company.UserConn.InterviewScheduleForUser(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"interview scheduled successfully"}`))
 }

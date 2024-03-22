@@ -928,9 +928,9 @@ func (user *UserController) getAppliedJobs(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	jobData := []*pb.JobResponse{}
+	jobData := []*pb.AppliedJobResponse{}
 	for {
-		jobid, err := jobids.Recv()
+		job, err := jobids.Recv()
 		if err == io.EOF {
 			break
 		}
@@ -938,13 +938,7 @@ func (user *UserController) getAppliedJobs(w http.ResponseWriter, r *http.Reques
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		job, err := user.CompanyConn.GetJob(context.Background(), &pb.GetJobById{
-			Id: jobid.JobId,
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+
 		jobData = append(jobData, job)
 	}
 	jsonData, err := json.Marshal(jobData)
@@ -969,6 +963,10 @@ func (user *UserController) jobSearch(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
 		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Designation) {
+		http.Error(w, "please enter a valid designation", http.StatusBadRequest)
 		return
 	}
 	req.UserId = userID
@@ -1073,6 +1071,10 @@ func (user *UserController) notifyMe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
 		return
 	}
+	if companyID == "" {
+		http.Error(w, "please select a company", http.StatusBadRequest)
+		return
+	}
 	req := &pb.NotifyMeRequest{
 		UserId:    userID,
 		CompanyId: companyID,
@@ -1090,8 +1092,12 @@ func (user *UserController) cancelNotify(w http.ResponseWriter, r *http.Request)
 	companyID := queryParams.Get("company_id")
 	userID, ok := r.Context().Value("userId").(string)
 	if !ok {
-		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		helper.PrintError("unable to get id from context", fmt.Errorf("error"))
 		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	if companyID == "" {
+		http.Error(w, "please select a company", http.StatusBadRequest)
 		return
 	}
 	req := &pb.NotifyMeRequest{
@@ -1148,7 +1154,7 @@ func (user *UserController) getAllNotifyMe(w http.ResponseWriter, r *http.Reques
 func (user *UserController) getAllNotifications(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("userId").(string)
 	if !ok {
-		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		helper.PrintError("unable to get id from context", fmt.Errorf("error"))
 		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
 		return
 	}
@@ -1196,6 +1202,18 @@ func (user *UserController) addReviewForCompany(w http.ResponseWriter, r *http.R
 		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
 		return
 	}
+	if !helper.CheckString(req.Description) {
+		http.Error(w, "please enter a valid description", http.StatusBadRequest)
+		return
+	}
+	if helper.CheckNegative(req.Rating) {
+		http.Error(w, "please provide a valid rating within 5", http.StatusBadRequest)
+		return
+	}
+	if req.Rating > 5 {
+		http.Error(w, "please provide a valid rating within 5", http.StatusBadRequest)
+		return
+	}
 	queryParams := r.URL.Query()
 	companyId := queryParams.Get("company_id")
 	req.UserId = userID
@@ -1214,6 +1232,10 @@ func (user *UserController) getReviewForCompany(w http.ResponseWriter, r *http.R
 	reviews, err := user.ReviewConn.GetCompanyReview(context.Background(), &pb.ReviewByCompanyId{
 		CompanyId: companyId,
 	})
+	if companyId == "" {
+		http.Error(w, "please select a company to get reviews", http.StatusBadRequest)
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -1342,11 +1364,24 @@ func (user *UserController) editEducation(w http.ResponseWriter, r *http.Request
 	w.Write(helper.UpdateSuccessMsg)
 }
 
-//	func (user *UserController)removeEducation(w http.ResponseWriter,r *http.Request){
-//		queryParams := r.URL.Query()
-//		educationId := queryParams.Get("education_id")
-//		if _,err:=user.Conn.
-//	}
+func (user *UserController) removeEducation(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	educationId := queryParams.Get("education_id")
+	if _, err := user.Conn.RemoveEducation(context.Background(), &pb.EducationById{
+		EducationId: educationId,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if educationId == "" {
+		http.Error(w, "please provide a valid education id", http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.DeleteSuccessMsg)
+
+}
 func (user *UserController) blockUser(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	userId := queryParams.Get("user_id")
@@ -1377,4 +1412,43 @@ func (user *UserController) unblockUser(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message":"user unblocked successfully"}`))
+}
+func (user *UserController) getInterviews(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving companyId", http.StatusBadRequest)
+		return
+	}
+	jobs, err := user.Conn.GetInterviewsForUser(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	jobRes := []*pb.InterviewResponse{}
+	for {
+		job, err := jobs.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		jobRes = append(jobRes, job)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(jobRes) == 0 {
+		w.Write([]byte(`{"message":"there are no interviews scheduled"}`))
+		return
+	}
+	jsonData, err := json.Marshal(jobRes)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Write(jsonData)
 }
