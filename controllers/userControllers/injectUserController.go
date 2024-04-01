@@ -38,6 +38,8 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Patch("/admin/skill", middleware.AdminMiddleware(user.adminUpdateSkill))
 	r.Post("/user/block", middleware.AdminMiddleware(user.blockUser))
 	r.Post("/user/unblock", middleware.AdminMiddleware(user.unblockUser))
+	r.Post("/subscriptions", middleware.CorsMiddleware(middleware.AdminMiddleware(user.addSubscriptionPlan)))
+	r.Patch("/subscriptions", middleware.CorsMiddleware(middleware.AdminMiddleware(user.updateSubscriptionPlans)))
 
 	r.Post("/user/signup", user.userSignup)
 	r.Post("/user/login", user.userLogin)
@@ -73,4 +75,8 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Delete("/user/profile/education", middleware.UserMiddleware(user.removeEducation))
 	r.Get("/user/interviews", middleware.UserMiddleware(user.getInterviews))
 	r.Post("/user/report", middleware.CompanyMiddleware(user.reportUser))
+	r.Get("/plans", middleware.UserMiddleware(user.getSubscriptionPlans))
+	r.Get("/subscriptions/payment", middleware.CorsMiddleware(user.paymentForSubscription))
+	r.Get("/payment/verify", middleware.CorsMiddleware(user.verifyPayment))
+	r.Get("/payment/verified", middleware.CorsMiddleware(user.paymentVerified))
 }

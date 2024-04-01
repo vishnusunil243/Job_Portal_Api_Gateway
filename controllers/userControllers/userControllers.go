@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vishnusunil243/Job-Portal-proto-files/pb"
@@ -1472,4 +1474,111 @@ func (user *UserController) reportUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message":"user reported successfully"}`))
+}
+func (user *UserController) addSubscriptionPlan(w http.ResponseWriter, r *http.Request) {
+	var data map[string]interface{}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodPost, "http://localhost:8089/subscriptions", strings.NewReader(string(jsonData)))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)             // Read error response body
+		http.Error(w, string(body), resp.StatusCode) // Return the same status code and body
+		return
+	}
+	io.Copy(w, resp.Body)
+}
+func (user *UserController) updateSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
+	var data map[string]interface{}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer r.Body.Close()
+	if err := json.Unmarshal(body, &data); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	subId := r.URL.Query().Get("sub_id")
+	u, err := url.Parse("http://localhost:8089/subscriptions")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	q := u.Query()
+	q.Set("sub_id", subId)
+	u.RawQuery = q.Encode()
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodPatch, u.String(), strings.NewReader(string(jsonData)))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		http.Error(w, string(body), resp.StatusCode)
+		return
+	}
+	io.Copy(w, resp.Body)
+}
+func (user *UserController) getSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:8089/plans", http.StatusFound)
+}
+func (user *UserController) paymentForSubscription(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userId := queryParams.Get("user_id")
+	planId := queryParams.Get("plan_id")
+	url := fmt.Sprintf("http://localhost:8089/subscriptions/payment?user_id=%s&plan_id=%s", userId, planId)
+	fmt.Println(url)
+	http.Redirect(w, r, url, http.StatusFound)
+}
+func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userId := queryParams.Get("user_id")
+	paymentRef := queryParams.Get("payment_ref")
+	orderId := queryParams.Get("order_id")
+	signature := queryParams.Get("signature")
+	id := queryParams.Get("id")
+	total := queryParams.Get("total")
+	planId := queryParams.Get("plan_id")
+	url := fmt.Sprintf("http://localhost:8089/payment/verify?user_id=%s&payment_ref=%s&order_id=%s&signature=%s&id=%s&total=%s&plan_id=%s", userId, paymentRef, orderId, signature, id, total, planId)
+	http.Redirect(w, r, url, http.StatusFound)
+}
+func (user *UserController) paymentVerified(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:8089/payment/verified", http.StatusFound)
 }

@@ -1061,10 +1061,7 @@ func (company *CompanyControllers) interviewSchedule(w http.ResponseWriter, r *h
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if !helper.ValidDate(req.Date) {
-		http.Error(w, "please enter a valid date in  dd-mm-yyyy format", http.StatusBadRequest)
-		return
-	}
+
 	req.JobId = jobID
 	req.UserId = userID
 	if _, err := company.UserConn.InterviewScheduleForUser(context.Background(), req); err != nil {
@@ -1074,4 +1071,28 @@ func (company *CompanyControllers) interviewSchedule(w http.ResponseWriter, r *h
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{"message":"interview scheduled successfully"}`))
+}
+func (company *CompanyControllers) hireUser(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	userId := queryParams.Get("user_id")
+	jobId := queryParams.Get("job_id")
+	if userId == "" {
+		http.Error(w, "please select a user to hire", http.StatusBadRequest)
+		return
+	}
+	if jobId == "" {
+		http.Error(w, "please select an appropriate job to perform this action", http.StatusBadRequest)
+		return
+	}
+	req := &pb.AddToShortListRequest{
+		UserId: userId,
+		JobId:  jobId,
+	}
+	if _, err := company.UserConn.HireUser(context.Background(), req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message":"hired successfully"}`))
 }

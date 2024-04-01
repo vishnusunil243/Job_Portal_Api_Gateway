@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	companycontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/companyControllers"
 	emailcontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/emailControllers"
+	interviewcontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/interviewControllers"
 	usercontrollers "github.com/vishnusunil243/Job_Portal_Api_Gateway/controllers/userControllers"
 	"github.com/vishnusunil243/Job_Portal_Api_Gateway/helper"
 )
@@ -32,8 +33,10 @@ func Connect(r *chi.Mux) {
 	userController := usercontrollers.NewUserServiceClient(userConn, secret)
 	emailController := emailcontrollers.NewEmailServiceClient(emailConn, secret)
 	companyController := companycontrollers.NewCompanyServiceClient(companyConn, secret)
+	interviewcontroller := interviewcontrollers.NewInterviewServiceClient(secret)
 
 	userController.InitialiseUserControllers(r)
 	emailController.InitialiseEmailControllers(r)
 	companyController.InitialiseCompanyControllers(r)
+	interviewcontroller.InitialiseInterviewControllers(r)
 }

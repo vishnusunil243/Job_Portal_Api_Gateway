@@ -6,8 +6,10 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v1.5.5
 	github.com/joho/godotenv v1.5.1
-	github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240322171432-2adb0636133c
+	github.com/rs/cors v1.10.1
+	github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240401125618-f7e25bf66c44
 	google.golang.org/grpc v1.62.1
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
@@ -16,5 +18,4 @@ require (
 	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
 )
