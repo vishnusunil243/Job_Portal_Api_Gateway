@@ -1582,3 +1582,128 @@ func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request
 func (user *UserController) paymentVerified(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "http://localhost:8089/payment/verified", http.StatusFound)
 }
+func (user *UserController) addProjects(w http.ResponseWriter, r *http.Request) {
+	var req *pb.AddProjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.PrintError("error while decoding json", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	userID, ok := r.Context().Value("userId").(string)
+	if !ok {
+		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
+		http.Error(w, "error whil retrieving userId", http.StatusBadRequest)
+		return
+	}
+
+	req.UserId = userID
+	if _, err := user.Conn.AddProject(context.Background(), req); err != nil {
+		helper.PrintError("error while adding project", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
+}
+func (user *UserController) updateProject(w http.ResponseWriter, r *http.Request) {
+	var req *pb.UpdateProjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		helper.PrintError("error while decoding json", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	queryParams := r.URL.Query()
+	projectId := queryParams.Get("project_id")
+	req.ProjectId = projectId
+	if _, err := user.Conn.EditProject(context.Background(), req); err != nil {
+		helper.PrintError("error while editing project", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.UpdateSuccessMsg)
+}
+func (user *UserController) deleteProject(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	projectId := queryParams.Get("project_id")
+	if _, err := user.Conn.DeleteProject(context.Background(), &pb.DeleteProjectRequest{
+		ProjectId: projectId,
+	}); err != nil {
+		helper.PrintError("error while deleting project", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.DeleteSuccessMsg)
+}
+func (user *UserController) getAllProject(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+
+	projects, err := user.Conn.GetAllProjects(context.Background(), &pb.GetUserById{
+		Id: userID,
+	})
+	if err != nil {
+		helper.PrintError("error while getting projects", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	projectData := []*pb.ProjectResponse{}
+	for {
+		project, err := projects.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			helper.PrintError("error while getting stream of projects", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		projectData = append(projectData, project)
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	if len(projectData) == 0 {
+		w.Write([]byte(`{"message":"no project has been added yet"}`))
+		return
+	}
+	jsonData, err := json.Marshal(projectData)
+	if err != nil {
+		helper.PrintError("error while marshalling to json", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Write(jsonData)
+}
+func (user *UserController) addProjectImage(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "unable to parse form", http.StatusBadRequest)
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "unable to get file from request", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		http.Error(w, "error reading file", http.StatusInternalServerError)
+		return
+	}
+	projectId := r.URL.Query().Get("project_id")
+	if _, err := user.Conn.AddProjectImage(context.Background(), &pb.AddProjectImageRequest{
+		ImageData: fileBytes,
+		ProjectId: projectId,
+	}); err != nil {
+		helper.PrintError("error while adding image to minio", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(helper.AdditionSuccessMsg)
+}

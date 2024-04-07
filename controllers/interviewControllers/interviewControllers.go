@@ -24,3 +24,7 @@ func (interview *InterviewController) joinRoom(w http.ResponseWriter, r *http.Re
 	fmt.Println(u.String())
 	http.Redirect(w, r, u.String(), http.StatusFound)
 }
+func (chat *InterviewController) chatController(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("heereee")
+	http.Redirect(w, r, "http://localhost:8000/ws", http.StatusFound)
+}

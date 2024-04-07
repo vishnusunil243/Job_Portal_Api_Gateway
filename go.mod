@@ -7,7 +7,7 @@ require (
 	github.com/go-chi/chi v1.5.5
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/cors v1.10.1
-	github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240401125618-f7e25bf66c44
+	github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240403095937-a743c73e7cdb
 	google.golang.org/grpc v1.62.1
 	google.golang.org/protobuf v1.33.0
 )

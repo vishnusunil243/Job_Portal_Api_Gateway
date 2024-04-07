@@ -79,4 +79,9 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Get("/subscriptions/payment", middleware.CorsMiddleware(user.paymentForSubscription))
 	r.Get("/payment/verify", middleware.CorsMiddleware(user.verifyPayment))
 	r.Get("/payment/verified", middleware.CorsMiddleware(user.paymentVerified))
+	r.Post("/user/projects", middleware.UserMiddleware(user.addProjects))
+	r.Patch("/user/projects", middleware.UserMiddleware(user.updateProject))
+	r.Delete("/user/projects", middleware.UserMiddleware(user.deleteProject))
+	r.Get("/user/projects", user.getAllProject)
+	r.Patch("/user/projects/image", middleware.UserMiddleware(user.addProjectImage))
 }

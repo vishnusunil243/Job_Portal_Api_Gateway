@@ -18,4 +18,5 @@ func NewInterviewServiceClient(secret string) *InterviewController {
 func (interview *InterviewController) InitialiseInterviewControllers(r *chi.Mux) {
 	r.Get("/call/create", middleware.CorsMiddleware(interview.createRoom))
 	r.Get("/call/join", middleware.CorsMiddleware(interview.joinRoom))
+	r.Get("/ws", interview.chatController)
 }
