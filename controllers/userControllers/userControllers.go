@@ -1584,7 +1584,7 @@ func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request
 	http.Redirect(w, r, url, http.StatusFound)
 }
 func (user *UserController) paymentVerified(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://payment-service:8089/payment/verified", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service/payment/verified", http.StatusFound)
 }
 func (user *UserController) addProjects(w http.ResponseWriter, r *http.Request) {
 	var req *pb.AddProjectRequest
