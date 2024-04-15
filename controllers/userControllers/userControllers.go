@@ -1561,15 +1561,53 @@ func (user *UserController) updateSubscriptionPlans(w http.ResponseWriter, r *ht
 	io.Copy(w, resp.Body)
 }
 func (user *UserController) getSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://payment-service:8089/plans", http.StatusFound)
+	req, err := http.NewRequest("GET", "http://payment-service:8089/plans", r.Body)
+	if err != nil {
+		helper.PrintError("error while making req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	req.Header = r.Header
+	res, err := client.Do(req)
+	if err != nil || res == nil {
+		helper.PrintError("error happenend at making second req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer res.Body.Close()
+	for k, v := range res.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(res.StatusCode)
+	io.Copy(w, res.Body)
+
 }
 func (user *UserController) paymentForSubscription(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	userId := queryParams.Get("user_id")
 	planId := queryParams.Get("plan_id")
 	url := fmt.Sprintf("http://payment-service:8089/subscriptions/payment?user_id=%s&plan_id=%s", userId, planId)
-	fmt.Println(url)
-	http.Redirect(w, r, url, http.StatusFound)
+	req, err := http.NewRequest("GET", url, r.Body)
+	if err != nil {
+		helper.PrintError("error while making req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	req.Header = r.Header
+	res, err := client.Do(req)
+	if err != nil || res == nil {
+		helper.PrintError("error happenend at making second req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer res.Body.Close()
+	for k, v := range res.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(res.StatusCode)
+	io.Copy(w, res.Body)
 }
 func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
@@ -1581,10 +1619,48 @@ func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request
 	total := queryParams.Get("total")
 	planId := queryParams.Get("plan_id")
 	url := fmt.Sprintf("http://payment-service:8089/payment/verify?user_id=%s&payment_ref=%s&order_id=%s&signature=%s&id=%s&total=%s&plan_id=%s", userId, paymentRef, orderId, signature, id, total, planId)
-	http.Redirect(w, r, url, http.StatusFound)
+	req, err := http.NewRequest("GET", url, r.Body)
+	if err != nil {
+		helper.PrintError("error while making req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	req.Header = r.Header
+	res, err := client.Do(req)
+	if err != nil || res == nil {
+		helper.PrintError("error happenend at making second req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer res.Body.Close()
+	for k, v := range res.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(res.StatusCode)
+	io.Copy(w, res.Body)
 }
 func (user *UserController) paymentVerified(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://payment-service/payment/verified", http.StatusFound)
+	req, err := http.NewRequest("GET", "http://payment-service/payment/verified", r.Body)
+	if err != nil {
+		helper.PrintError("error while making req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	req.Header = r.Header
+	res, err := client.Do(req)
+	if err != nil || res == nil {
+		helper.PrintError("error happenend at making second req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer res.Body.Close()
+	for k, v := range res.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(res.StatusCode)
+	io.Copy(w, res.Body)
 }
 func (user *UserController) addProjects(w http.ResponseWriter, r *http.Request) {
 	var req *pb.AddProjectRequest
@@ -1728,5 +1804,24 @@ func (user *UserController) addProjectImage(w http.ResponseWriter, r *http.Reque
 	w.Write(helper.AdditionSuccessMsg)
 }
 func (user *UserController) frontend(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://frontend-service:5173", http.StatusFound)
+	req, err := http.NewRequest("GET", "http://frontend-service:5173", r.Body)
+	if err != nil {
+		helper.PrintError("error while making req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	client := &http.Client{}
+	req.Header = r.Header
+	res, err := client.Do(req)
+	if err != nil || res == nil {
+		helper.PrintError("error happenend at making second req from api gateway", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer res.Body.Close()
+	for k, v := range res.Header {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(res.StatusCode)
+	io.Copy(w, res.Body)
 }
