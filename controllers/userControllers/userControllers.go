@@ -961,6 +961,10 @@ func (user *UserController) jobSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	queryParams := r.URL.Query()
+	categoryId := queryParams.Get("categoryId")
+	cId, _ := strconv.Atoi(categoryId)
+	req.CategoryId = int32(cId)
 	userID, ok := r.Context().Value("userId").(string)
 	if !ok {
 		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
@@ -1589,6 +1593,14 @@ func (user *UserController) addProjects(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if !helper.CheckString(req.Name) {
+		http.Error(w, "please provide a valid name", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidLink(req.Link) {
+		http.Error(w, "please provide a valid link", http.StatusBadRequest)
+		return
+	}
 	userID, ok := r.Context().Value("userId").(string)
 	if !ok {
 		helper.PrintError("unable to get companyid from context", fmt.Errorf("error"))
@@ -1611,6 +1623,14 @@ func (user *UserController) updateProject(w http.ResponseWriter, r *http.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		helper.PrintError("error while decoding json", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !helper.CheckString(req.Name) {
+		http.Error(w, "please provide a valid name", http.StatusBadRequest)
+		return
+	}
+	if !helper.ValidLink(req.Link) {
+		http.Error(w, "please provide a valid link", http.StatusBadRequest)
 		return
 	}
 	queryParams := r.URL.Query()
@@ -1706,4 +1726,7 @@ func (user *UserController) addProjectImage(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(helper.AdditionSuccessMsg)
+}
+func (user *UserController) frontend(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://localhost:5173", http.StatusFound)
 }

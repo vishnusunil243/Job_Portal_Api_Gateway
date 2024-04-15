@@ -26,6 +26,8 @@ github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240403065822-f7ba8a323
 github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240403065822-f7ba8a323685/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
 github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240403095937-a743c73e7cdb h1:4EP0RK9dikTFqk1GuVMCXZO8KvDmQ1kBvHMZXM4JxzY=
 github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240403095937-a743c73e7cdb/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240408073750-ab6176992467 h1:j5jmu+hTNj6q+pnv1cARoFicAIjpE19uHyYsoVTLBmw=
+github.com/vishnusunil243/Job-Portal-proto-files v0.0.0-20240408073750-ab6176992467/go.mod h1:HrgijLpWtziSIZNoLPNoNu+2HOxMfiGEvG32elFR5mE=
 golang.org/x/net v0.20.0 h1:aCL9BSgETF1k+blQaYUBx9hJ9LOGP3gAVemcZlf1Kpo=
 golang.org/x/net v0.20.0/go.mod h1:z8BVo6PvndSri0LbOE3hAn0apkU+1YvI6E70E9jsnvY=
 golang.org/x/sys v0.16.0 h1:xWw16ngr6ZMtmxDyKyIgsE93KNKz5HKmMa3b8ALHidU=

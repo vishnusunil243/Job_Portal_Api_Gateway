@@ -84,4 +84,5 @@ func (user *UserController) InitialiseUserControllers(r *chi.Mux) {
 	r.Delete("/user/projects", middleware.UserMiddleware(user.deleteProject))
 	r.Get("/user/projects", user.getAllProject)
 	r.Patch("/user/projects/image", middleware.UserMiddleware(user.addProjectImage))
+	r.Get("/user/video-call", user.frontend)
 }
