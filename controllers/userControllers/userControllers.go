@@ -1497,7 +1497,7 @@ func (user *UserController) addSubscriptionPlan(w http.ResponseWriter, r *http.R
 		return
 	}
 	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodPost, "http://localhost:8089/subscriptions", strings.NewReader(string(jsonData)))
+	req, err := http.NewRequest(http.MethodPost, "http://payment-service:8089/subscriptions", strings.NewReader(string(jsonData)))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1533,7 +1533,7 @@ func (user *UserController) updateSubscriptionPlans(w http.ResponseWriter, r *ht
 		return
 	}
 	subId := r.URL.Query().Get("sub_id")
-	u, err := url.Parse("http://localhost:8089/subscriptions")
+	u, err := url.Parse("http://payment-service:8089/subscriptions")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -1561,13 +1561,13 @@ func (user *UserController) updateSubscriptionPlans(w http.ResponseWriter, r *ht
 	io.Copy(w, resp.Body)
 }
 func (user *UserController) getSubscriptionPlans(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:8089/plans", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:8089/plans", http.StatusFound)
 }
 func (user *UserController) paymentForSubscription(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	userId := queryParams.Get("user_id")
 	planId := queryParams.Get("plan_id")
-	url := fmt.Sprintf("http://localhost:8089/subscriptions/payment?user_id=%s&plan_id=%s", userId, planId)
+	url := fmt.Sprintf("http://payment-service:8089/subscriptions/payment?user_id=%s&plan_id=%s", userId, planId)
 	fmt.Println(url)
 	http.Redirect(w, r, url, http.StatusFound)
 }
@@ -1580,11 +1580,11 @@ func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request
 	id := queryParams.Get("id")
 	total := queryParams.Get("total")
 	planId := queryParams.Get("plan_id")
-	url := fmt.Sprintf("http://localhost:8089/payment/verify?user_id=%s&payment_ref=%s&order_id=%s&signature=%s&id=%s&total=%s&plan_id=%s", userId, paymentRef, orderId, signature, id, total, planId)
+	url := fmt.Sprintf("http://payment-service:8089/payment/verify?user_id=%s&payment_ref=%s&order_id=%s&signature=%s&id=%s&total=%s&plan_id=%s", userId, paymentRef, orderId, signature, id, total, planId)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 func (user *UserController) paymentVerified(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:8089/payment/verified", http.StatusFound)
+	http.Redirect(w, r, "http://payment-service:8089/payment/verified", http.StatusFound)
 }
 func (user *UserController) addProjects(w http.ResponseWriter, r *http.Request) {
 	var req *pb.AddProjectRequest
@@ -1728,5 +1728,5 @@ func (user *UserController) addProjectImage(w http.ResponseWriter, r *http.Reque
 	w.Write(helper.AdditionSuccessMsg)
 }
 func (user *UserController) frontend(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "http://localhost:5173", http.StatusFound)
+	http.Redirect(w, r, "http://frontend-service:5173", http.StatusFound)
 }
