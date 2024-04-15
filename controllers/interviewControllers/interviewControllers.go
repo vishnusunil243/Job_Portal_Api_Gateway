@@ -8,7 +8,7 @@ import (
 
 func (interview *InterviewController) createRoom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	http.Redirect(w, r, "http://interviewchat:8000/create", http.StatusFound)
+	http.Redirect(w, r, "http://interviewchat-service:8000/create", http.StatusFound)
 }
 func (interview *InterviewController) joinRoom(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("hiiii")
@@ -26,5 +26,5 @@ func (interview *InterviewController) joinRoom(w http.ResponseWriter, r *http.Re
 }
 func (chat *InterviewController) chatController(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("heereee")
-	http.Redirect(w, r, "http://interviewchat-service:8000/ws", http.StatusFound)
+	http.Redirect(w, r, "http://interviewchat-service.default.svc.cluster.local:8000/ws", http.StatusFound)
 }
