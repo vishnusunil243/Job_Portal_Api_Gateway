@@ -1641,7 +1641,7 @@ func (user *UserController) verifyPayment(w http.ResponseWriter, r *http.Request
 	io.Copy(w, res.Body)
 }
 func (user *UserController) paymentVerified(w http.ResponseWriter, r *http.Request) {
-	req, err := http.NewRequest("GET", "http://payment-service/payment/verified", r.Body)
+	req, err := http.NewRequest("GET", "http://payment-service:8089/payment/verified", r.Body)
 	if err != nil {
 		helper.PrintError("error while making req from api gateway", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
