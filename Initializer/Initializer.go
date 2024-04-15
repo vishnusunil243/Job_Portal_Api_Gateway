@@ -18,15 +18,15 @@ func Connect(r *chi.Mux) {
 		fmt.Println("error secret cannot be retrieved")
 	}
 	secret := os.Getenv("secret")
-	userConn, err := helper.DialGrpc(":8081")
+	userConn, err := helper.DialGrpc("user-service:8081")
 	if err != nil {
 		fmt.Println("cannot connect to user-service ", err)
 	}
-	emailConn, err := helper.DialGrpc(":8087")
+	emailConn, err := helper.DialGrpc("notificaion-service:8087")
 	if err != nil {
 		fmt.Println("cannot connect to email server ", err)
 	}
-	companyConn, err := helper.DialGrpc(":8082")
+	companyConn, err := helper.DialGrpc("company-service:8082")
 	if err != nil {
 		fmt.Println("cannot connect to company-service")
 	}

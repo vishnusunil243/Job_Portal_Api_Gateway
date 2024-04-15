@@ -17,9 +17,9 @@ type UserController struct {
 }
 
 func NewUserServiceClient(conn *grpc.ClientConn, secret string) *UserController {
-	comConn, _ := helper.DialGrpc("localhost:8082")
-	emailConn, _ := helper.DialGrpc("localhost:8087")
-	reviewConn, _ := helper.DialGrpc("localhost:8083")
+	comConn, _ := helper.DialGrpc("company-service:8082")
+	emailConn, _ := helper.DialGrpc("notificaion-service:8087")
+	reviewConn, _ := helper.DialGrpc("search-service:8083")
 	return &UserController{
 		Conn:        pb.NewUserServiceClient(conn),
 		EmailConn:   pb.NewEmailServiceClient(emailConn),

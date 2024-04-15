@@ -18,11 +18,11 @@ type CompanyControllers struct {
 }
 
 func NewCompanyServiceClient(conn *grpc.ClientConn, secret string) *CompanyControllers {
-	emailConn, err := helper.DialGrpc("localhost:8087")
+	emailConn, err := helper.DialGrpc("notification-service:8087")
 	if err != nil {
 		log.Fatal("error connecting email service")
 	}
-	userConn, err := helper.DialGrpc("localhost:8081")
+	userConn, err := helper.DialGrpc("user-service:8081")
 	if err != nil {
 		log.Fatal("error while connecting to user service")
 	}
