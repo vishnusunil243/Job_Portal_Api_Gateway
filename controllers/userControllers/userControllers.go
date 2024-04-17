@@ -55,6 +55,7 @@ func (user *UserController) userSignup(w http.ResponseWriter, r *http.Request) {
 			Email: req.Email,
 		})
 		if err != nil {
+			helper.PrintError("error sending otp", err)
 			http.Error(w, "error sending otp", http.StatusBadRequest)
 			return
 		}

@@ -3,3 +3,4 @@ docker-compose.yaml
 init.sql
 docker-entrypoint-initdb.d
 k8s
+nginx.conf
